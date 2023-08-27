@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MAX_BUFFER_SIZE 1024
 #define PROC_PATH "/proc"
 #define TASK_DIR "task"
 #define STATUS_FILE "status"
@@ -45,7 +44,8 @@ char *get_process_name(char *parentPath, char *pid)
 char *get_task_dir_path(char *parentPath, char *pid)
 {
   size_t parentPathLen = strlen(parentPath);
-  char *path = malloc(parentPathLen + strlen(pid) + strlen(TASK_DIR) + 2);
+  size_t buff_size = parentPathLen + strlen(pid) + strlen(TASK_DIR) + 10;
+  char *path = malloc(parentPathLen + strlen(pid) + strlen(TASK_DIR) + 10);
 
   if (!path)
   {
@@ -53,7 +53,7 @@ char *get_task_dir_path(char *parentPath, char *pid)
     exit(1);
   }
 
-  snprintf(path, MAX_BUFFER_SIZE, "%s/%s/%s", parentPath, pid, TASK_DIR);
+  snprintf(path, buff_size, "%s/%s/%s", parentPath, pid, TASK_DIR);
 
   return path;
 }
@@ -80,8 +80,15 @@ void print_process_tree(char *pid, char *parentPath, int level)
     {
       char *child_pid = ent->d_name;
       size_t parentPathLen = strlen(parentPath);
-      char *newParentPath = malloc(parentPathLen + strlen(ent->d_name) + 2);
-      snprintf(newParentPath, MAX_BUFFER_SIZE, "%s", get_task_dir_path(parentPath, pid));
+      size_t nameLen = strlen(ent->d_name);
+      size_t buff_size = parentPathLen + nameLen + strlen(TASK_DIR) + strlen(pid) + 5;
+      char *newParentPath = malloc(buff_size);
+      if (!newParentPath)
+      {
+        perror("malloc failed");
+        exit(1);
+      }
+      snprintf(newParentPath, buff_size, "%s", get_task_dir_path(parentPath, pid));
       print_process_tree(child_pid, newParentPath, level + 1);
       free(newParentPath);
     }
@@ -112,7 +119,8 @@ int main()
     {
       // parentPath
       char *parentPath = malloc(strlen(PROC_PATH) + 2);
-      snprintf(parentPath, MAX_BUFFER_SIZE, "%s", PROC_PATH);
+      size_t buff_size = strlen(PROC_PATH) + 2;
+      snprintf(parentPath, buff_size, "%s", PROC_PATH);
       print_process_tree(entry->d_name, parentPath, 1);
       free(parentPath);
     }
